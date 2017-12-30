@@ -19,8 +19,8 @@ import java.net.HttpURLConnection.HTTP_UNAUTHORIZED
  */
 abstract class SimplePresenter<RE, RP>(private val view: SimpleView<RE>, private val repository: Class<RP>, baseURL: String) : Callback<RE> {
     private val baseUrl = baseURL
-    private var routes: RP? = null
-    private lateinit var call: Call<RE>
+    var routes: RP? = null
+    lateinit var call: Call<RE>
 
     init {
         view.displayLoadingView(true)
@@ -98,7 +98,7 @@ abstract class SimplePresenter<RE, RP>(private val view: SimpleView<RE>, private
      *
      * If any operation needs to be made, this function can be overwritten.
      */
-    fun onSuccessfulResponse(response: RE?) {
+    protected open fun onSuccessfulResponse(response: RE?) {
         view.setup(response)
         view.displayLoadingView(false)
     }

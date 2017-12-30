@@ -25,7 +25,7 @@ interface SimpleView<RE> {
      * should be used on a Presenter method and the result of the
      * processing be displayed here.
      */
-    fun setup(response: Any?)
+    fun setup(response: RE?)
 
     /**
      * This method should be used to display an error
