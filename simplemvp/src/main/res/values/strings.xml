@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">SimpleMVP</string>
+    <string name="empty_response">Invalid server response</string>
 </resources>
