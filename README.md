@@ -27,7 +27,7 @@ Instead of adding more dependencies to your project like **RxJava** or **RxAndro
 
 Download
 -------------
-tba
+[Download AAR file](https://github.com/AlfredoBejarano/AndroidSimpleMVP/releases/download/1.0/simplemvp.aar)
 
 Licence
 -------------
