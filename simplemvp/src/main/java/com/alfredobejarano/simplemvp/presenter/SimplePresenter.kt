@@ -12,8 +12,12 @@ import java.net.HttpURLConnection.HTTP_UNAUTHORIZED
 
 /**
  * This class handles all the API requests and data processing.
+ * 
+ * view - A class that implements the SimpleView interface.
+ * repository - Interface that contains the API definitions that your project will use. (you need to create the Interface in your project, see app module for a brief example).
+ * baseURL - the base URL for your endpoints.
  *
- * @author @jacbe
+ * @author @AlfredoBejarano
  * @version 1.0
  * @since 30/12/2017
  */
