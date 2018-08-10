@@ -1,143 +1,62 @@
 package com.alfredobejarano.simplemvp.presenter
 
-import android.support.annotation.StringRes
-import com.alfredobejarano.simplemvp.BuildConfig
-import com.alfredobejarano.simplemvp.R
+import android.os.Handler
+import android.util.Log
 import com.alfredobejarano.simplemvp.view.SimpleView
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
-import retrofit2.*
-import retrofit2.converter.gson.GsonConverterFactory
-import java.net.HttpURLConnection.HTTP_UNAUTHORIZED
 
 /**
- * This class handles all the API requests and data processing.
- * 
- * view - A class that implements the SimpleView interface.
- * repository - Interface that contains the API definitions that your project will use. (you need to create the Interface in your project, see app module for a brief example).
- * baseURL - the base URL for your endpoints.
+ * This presenter class defines the most basic functionality for a Presenter class.
  *
- * @author @AlfredoBejarano
- * @version 1.0
- * @since 30/12/2017
+ * @author Alfredo Bejarano
+ * @version 2.0
+ * @since 09/08/2018
  */
-abstract class SimplePresenter<RE, RP>(private val view: SimpleView<RE>, private val repository: Class<RP>, baseURL: String) : Callback<RE> {
-    private val baseUrl = baseURL
-    var routes: RP? = null
-    lateinit var call: Call<RE>
-
-    init {
-        view.displayLoadingView(true)
-        initClient()
-    }
-
+abstract class SimplePresenter(protected var view: SimpleView?) {
     /**
-     * Initializes the client for this presenter to use.
-     */
-    private fun initClient() {
-        val restClient: Retrofit = buildRetrofitClient()
-        routes = restClient.create(repository)
-    }
-
-    /**
-     * Builds a Retrofit client for making requests using GSON as the parser for objects.
-     */
-    private fun buildRetrofitClient(): Retrofit {
-        val restClient: Retrofit.Builder = Retrofit
-                .Builder()
-                .baseUrl(baseUrl)
-                .addConverterFactory(GsonConverterFactory.create())
-        return restClient.client(buildHttpInterceptor()).build()
-    }
-
-    /**
-     * Builds an HTTP interceptor to log the request and petitions into LogCat.
-     */
-    private fun buildHttpInterceptor(): OkHttpClient {
-        val interceptor = HttpLoggingInterceptor()
-        interceptor.level = HttpLoggingInterceptor.Level.BODY
-        val client: OkHttpClient.Builder = OkHttpClient.Builder()
-
-        // Is not desired to log the HTTP output in production code, so just add this logger in the release build type.
-        return if (BuildConfig.DEBUG) {
-            client.addInterceptor(interceptor).build()
-        } else {
-            client.build()
-        }
-    }
-
-    /**
-     * Override this method to use the RestClient and choose a method
-     * defined in the Routes interface using Retrofit guidelines.
+     * Sends a message to the attached view.
+     * * If the view Context is not null, the message is sent to it.
+     * * If the view is null (let's say, while Unit Testing), the message is printed to the LogCat.
      *
-     * using:
-     * call = routes.<method>
-     * call.enqueue(this)
+     * @param message The message object to be sent to the view.
      */
-    abstract fun performRequest(body: Any)
-
-    /**
-     * Use this function to handle unauthorized access such as expired tokens.
-     */
-    abstract fun handleUnauthorizedResponse()
-
-    /**
-     * Sends a string to the view to display an error.
-     */
-    private fun onErrorHandling(message: String) {
-        view.displayLoadingView(false)
-        view.displayErrorMessage(message)
-    }
-
-    /**
-     * Sends a String Res value to the view to display an error.
-     */
-    private fun onErrorHandling(@StringRes message: Int) {
-        view.displayLoadingView(false)
-        view.displayErrorMessage(message)
-    }
-
-    /**
-     * Send the retrieved data to the view.
-     *
-     * If any operation needs to be made, this function can be overwritten.
-     */
-    protected open fun onSuccessfulResponse(response: RE?) {
-        view.setup(response)
-        view.displayLoadingView(false)
-    }
-
-    /**
-     * Handle when the request has failed.
-     */
-    override fun onFailure(call: Call<RE>?, t: Throwable?) {
-        if (t is HttpException) {
-            val code = t.response().code()
-            if (code == HTTP_UNAUTHORIZED) {
-                handleUnauthorizedResponse()
-            } else {
-                onErrorHandling("HTTP " + code)
+    fun sendMessage(message: Any) {
+        // Check if the View's Context is not null.
+        view?.asContext()?.let {
+            Handler(it.mainLooper).post {
+                // Send the display message if it is not null.
+                view?.displayMessage(message)
             }
-        } else {
-            onErrorHandling(t?.localizedMessage!!)
+        } ?: run {
+            // If the view Context is null, print the message String value.
+            Log.d(this::class.java.simpleName, message.toString())
         }
     }
 
     /**
-     * Handle when a response is successful.
+     * Reports to the view that this presenter is doing some processing work.
+     * If the view is null (let's say, while Unit testing) the isWorking value
+     * gets printed in the LogCat.
      *
-     * A response having code HTTP 200, doesn't mean it was successful at all,
-     * some additional checks needs to be made.
+     * @param isWorking If the presenter is working or not.
      */
-    override fun onResponse(call: Call<RE>?, response: Response<RE>?) {
-        if (response != null) {
-            when {
-                response.isSuccessful -> onSuccessfulResponse(response.body())
-                response.code() == HTTP_UNAUTHORIZED -> handleUnauthorizedResponse()
-                else -> onErrorHandling(response.errorBody().toString())
+    fun reportProgress(isWorking: Boolean) {
+        // Check if the View's Context is not null.
+        view?.asContext()?.let {
+            Handler(it.mainLooper).post {
+                // Report the presenter processing status to the view.
+                view?.displayLoadingView(isWorking)
             }
-        } else {
-            onErrorHandling(R.string.empty_response)
+        } ?: run {
+            // If the view Context is null, print the Status to the LogCat.
+            Log.d(this::class.java.simpleName, "Presenter is working: $isWorking")
         }
+    }
+
+    /**
+     * Destroy the view reference for this
+     * presenter for it to be garbage collected.
+     */
+    fun onDestroyView() {
+        view = null
     }
 }
