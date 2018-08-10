@@ -95,6 +95,8 @@ abstract class SimpleActivity<T : ViewDataBinding> : AppCompatActivity(), Simple
         mMessagesSnackbar = Snackbar.make(findViewById(android.R.id.content), "", Snackbar.LENGTH_SHORT)
         // Initialize this view widgets.
         setup()
+        // Executes pending bindings, if defined within setup().
+        mBinding?.executePendingBindings()
     }
 
     /**

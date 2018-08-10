@@ -51,6 +51,8 @@ abstract class SimpleFragment<T : ViewDataBinding> : SimpleView, Fragment() {
         mBinding = DataBindingUtil.inflate(layoutInflater, getLayoutId(), view.findViewById(R.id.base_content), true)
         // Start the view.
         startView()
+        // Executes pending bindings, if defined within setup().
+        mBinding?.executePendingBindings()
     }
 
     /**
