@@ -1,10 +1,12 @@
 package com.alfredobejarano.sampleapp.presenter
 
-
-import com.alfredobejarano.sampleapp.model.SampleApp
+import android.arch.lifecycle.MutableLiveData
+import com.alfredobejarano.sampleapp.R
 import com.alfredobejarano.sampleapp.repository.Routes
-import com.alfredobejarano.simplemvp.presenter.SimplePresenter
+import com.alfredobejarano.simplemvp.presenter.SimpleNetworkPresenter
 import com.alfredobejarano.simplemvp.view.SimpleView
+import kotlin.concurrent.thread
+
 
 /**
  * Sample class of the implementation of the SimplePresenter.
@@ -13,34 +15,34 @@ import com.alfredobejarano.simplemvp.view.SimpleView
  * @version 1.0
  * @since 30/12/2017
  */
-class SampleAppPresenter(view: SimpleView<SampleApp>, repository: Class<Routes>, baseURL: String) : SimplePresenter<SampleApp, Routes>(view, repository, baseURL) {
-    init {
-        performRequest("")
-    }
-
-    override fun performRequest(body: Any) {
-        call = routes!!.getSampleApp()
-        call.enqueue(this)
-    }
-
-    override fun handleUnauthorizedResponse() {
-        // Do nothing.
-    }
+class SampleAppPresenter(view: SimpleView?, apiDefinitions: Class<Routes>) : SimpleNetworkPresenter<Routes>(view, apiDefinitions) {
+    val deviceIP = MutableLiveData<String>()
 
     /**
-     * Example of data manipulation for the retrieved response.
-     * This functions must be overriden if operations with the data needs to be made.
-     * Operations on the classes that implement SimpleView is not recommended.
+     * Defines the base URL for this presenter.
+     * Usually the base URL will not change, so defining a
+     * BuildConfig constant will save some hassle with this.
      */
-    override fun onSuccessfulResponse(response: SampleApp?) {
-        super.onSuccessfulResponse(buildText(response))
-    }
+    override fun getBaseURL() = "https://httpbin.org/"
 
     /**
-     * Adds "Yout IP is: " text to an origin in a SampleApp object.
+     * Performs a request to retrieve your device IP.
      */
-    private fun buildText(response: SampleApp?): SampleApp? {
-        response!!.origin = "Your IP is: " + response.origin
-        return response
+    fun getMyIP() = thread(start = true) {
+        // Report that the presenter is doing work
+        status.postValue(Status.STATUS_BUSY)
+        // Build the request using the API definitions in Routes.kt
+        val request = routes?.getDeviceIP()
+        enqueueRequest(request) {
+            if (it != null) {
+                // Report the device ip.
+                deviceIP.postValue(it.origin)
+            } else {
+                // Report that the device IP could not be read.
+                deviceIP.postValue(view?.asContext()?.getString(R.string.cant_read_ip))
+            }
+            // Report that the presenter has finished doing work
+            status.postValue(Status.STATUS_DONE)
+        }
     }
 }
