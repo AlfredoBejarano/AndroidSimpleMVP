@@ -1,6 +1,6 @@
 package com.alfredobejarano.sampleapp.repository
 
-import com.alfredobejarano.sampleapp.model.SampleApp
+import com.alfredobejarano.sampleapp.model.DeviceIP
 import retrofit2.Call
 import retrofit2.http.GET
 
@@ -15,5 +15,5 @@ import retrofit2.http.GET
  */
 interface Routes {
     @GET("get")
-    fun getSampleApp(): Call<SampleApp>
+    fun getDeviceIP(): Call<DeviceIP>
 }
