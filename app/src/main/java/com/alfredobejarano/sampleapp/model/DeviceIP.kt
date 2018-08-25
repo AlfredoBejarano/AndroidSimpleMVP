@@ -12,7 +12,7 @@ import com.google.gson.annotations.SerializedName
  * @version 1.0
  * @since 30/12/2017
  */
-data class SampleApp(
+data class DeviceIP(
         @Expose
         @SerializedName("origin")
         var origin: String,

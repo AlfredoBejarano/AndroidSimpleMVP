@@ -1,49 +1,46 @@
 package com.alfredobejarano.simplemvp.view
 
-import android.support.annotation.StringRes
+import android.content.Context
+
 
 /**
- * Interface that defines which methods an interface needs to have.
+ * Interface that defines which methods a View
+ * needs to have for ths architecture to work.
  *
- * RE - Generic that defines which class the response from the presenter is going to be.
- *
- * @author @AlfredoBejarano
- * @version 1.0
- * @since 30/12/2017
+ * @author Alfredo Bejarano
+ * @version 3.0
+ * @since 09/08/2018
  */
-interface SimpleView<RE> {
+interface SimpleView {
     /**
-     * This method should be used to define the value
-     * for the presenter field of the instance that implements
-     * this interface.
+     * This method should be used for assigning listeners or callbacks to
+     * widgets used by this View layout and attaching a presenter class.
      */
-    fun attachPresenter()
+    fun setup()
 
     /**
-     * This method should be used for using the data retrieved
-     * and display it in the layout views, any processing of them
-     * should be used on a Presenter method and the result of the
-     * processing be displayed here.
-     */
-    fun setup(response: RE?)
-
-    /**
-     * This method should be used to display an error
-     * using a String object as the message.
-     */
-    fun displayErrorMessage(message: String)
-
-    /**
-     * This method should be used to display an error
-     * using a @StringRes Integer as the message.
-     */
-    fun displayErrorMessage(@StringRes message: Int)
-
-    /**
-     * This method should process when the view is waiting for a response
-     * (ej. Presenter doing stuff in other thread).
+     * Method that will define this view as a Context instance.
      *
-     * Displaying a designed view for "loading" is strongly recommended.
+     * @return The context in one the view is currently existing.
      */
-    fun displayLoadingView(isVisible: Boolean)
+    fun asContext(): Context?
+
+    /**
+     * Sets the visibility of a given loading view or indicator defines in this View.
+     *
+     *  * **true** should be used for displaying the loading indicator.
+     *  * **false** should be used for hiding the loading indicator.
+     *
+     *
+     * @param displayView Boolean value for displaying or hiding the view.
+     */
+    fun displayLoadingView(displayView: Boolean)
+
+    /**
+     * This method should check which class the message parameter
+     * is and notify to the user accordingly.
+     *
+     * @param message The data to be displayed to the user.
+     */
+    fun displayMessage(message: Any?)
 }
