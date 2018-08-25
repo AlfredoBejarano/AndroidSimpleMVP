@@ -42,5 +42,5 @@ interface SimpleView {
      *
      * @param message The data to be displayed to the user.
      */
-    fun displayMessage(message: Any)
+    fun displayMessage(message: Any?)
 }
