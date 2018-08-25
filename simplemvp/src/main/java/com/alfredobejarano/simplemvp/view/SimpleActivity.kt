@@ -1,5 +1,7 @@
 package com.alfredobejarano.simplemvp.view
 
+import android.arch.lifecycle.MutableLiveData
+import android.arch.lifecycle.Observer
 import android.databinding.DataBindingUtil
 import android.databinding.ViewDataBinding
 import android.os.Bundle
@@ -10,6 +12,7 @@ import android.view.ViewGroup
 import com.alfredobejarano.simplemvp.R
 import com.alfredobejarano.simplemvp.presenter.SimplePresenter
 
+
 /**
  * Simple [AppCompatActivity] class that implements [SimpleView].
  * @param T Type of the ViewDataBinding for this activity.
@@ -19,6 +22,13 @@ import com.alfredobejarano.simplemvp.presenter.SimplePresenter
  * @version 3.0
  */
 abstract class SimpleActivity<T : ViewDataBinding> : AppCompatActivity(), SimpleView {
+    /**
+     * Observer that will display the loading view if a Presenter is busy.
+     */
+    private val mLoadingObserver = Observer<SimplePresenter.Status> {
+        displayLoadingView(it == SimplePresenter.Status.STATUS_BUSY)
+    }
+
     /**
      * Snackbar that will display messages.
      */
@@ -33,7 +43,7 @@ abstract class SimpleActivity<T : ViewDataBinding> : AppCompatActivity(), Simple
      * Reference to the [ViewDataBinding] for this view,
      * allowing binding from presenter classes or values.
      */
-    protected var mBinding: T? = null
+    private var mBinding: T? = null
 
     /**
      * Creates this activity, and inflates the activity layout inside
@@ -45,6 +55,8 @@ abstract class SimpleActivity<T : ViewDataBinding> : AppCompatActivity(), Simple
         setContentView(R.layout.layout_base)
         // Then, proceed to inflate this view data binding inside the base_content view.
         mBinding = DataBindingUtil.inflate(layoutInflater, getLayoutId(), findViewById(R.id.base_content), true)
+        // Set the binding reference LifeCycleOwner.
+        mBinding?.setLifecycleOwner(this);
         // Start this view.
         startView()
     }
@@ -76,14 +88,17 @@ abstract class SimpleActivity<T : ViewDataBinding> : AppCompatActivity(), Simple
      *
      * @param message The data to be displayed to the user.
      */
-    override fun displayMessage(message: Any) {
+    override fun displayMessage(message: Any?) {
+        // Detect the message class of the payload.
         when (message) {
             is Int -> mMessagesSnackbar?.setText(message)
             is String -> mMessagesSnackbar?.setText(message)
             is Throwable -> mMessagesSnackbar?.setText(message.localizedMessage)
             else -> mMessagesSnackbar?.setText(message.toString())
         }
+        // Hide the lading view.
         displayLoadingView(false)
+        // Display the error snackbar.
         mMessagesSnackbar?.show()
     }
 
@@ -95,27 +110,37 @@ abstract class SimpleActivity<T : ViewDataBinding> : AppCompatActivity(), Simple
         mMessagesSnackbar = Snackbar.make(findViewById(android.R.id.content), "", Snackbar.LENGTH_SHORT)
         // Initialize this view widgets.
         setup()
-        // Executes pending bindings, if defined within setup().
-        mBinding?.executePendingBindings()
     }
 
     /**
      * Destroys all view references from the presenters.
      */
     private fun detachPresenters() {
-        // Destroy every single reference to this view.
-        mPresenters.forEach {
-            it.value.onDestroyView()
+        // Check if there are presenters attached to this view.
+        if (mPresenters.isNotEmpty()) {
+            // Destroy every single reference to this view.
+            mPresenters.forEach {
+                it.value.destroyView()
+            }
+            // Clear the presenters list.
+            mPresenters.clear()
         }
-        // Clear the presenters list.
-        mPresenters.clear()
     }
 
     /**
      * Adds a SimplePresenter class to the list of presenters for this view.
      */
-    protected fun attachPresenter(vararg presenters: SimplePresenter) = presenters.forEach {
-        mPresenters[it.javaClass.simpleName] = it
+    protected fun attachPresenter(vararg presenters: SimplePresenter) {
+        // Check if at least a SimplePResenter object has been sent.
+        if (presenters.isNotEmpty()) {
+            // Add the presenters to the mPresenters HashMap.
+            presenters.forEach {
+                // Add the current presenter to the list.
+                mPresenters[it.javaClass.simpleName] = it
+                // Observe the status property of the presenter.
+                observe(it.status, mLoadingObserver)
+            }
+        }
     }
 
     /**
@@ -123,11 +148,18 @@ abstract class SimpleActivity<T : ViewDataBinding> : AppCompatActivity(), Simple
      * @return The desired presenter class, if it exists.
      */
     protected fun <P : SimplePresenter> getPresenter(presenterClass: Class<P>): P? {
-        var presenter: P? = null
-        if (mPresenters.containsKey(presenterClass.simpleName)) {
-            presenter = presenterClass.cast(mPresenters[presenterClass.simpleName])
+        // Get the simple class name for the attaching presenter.
+        val presenterClassName = presenterClass.simpleName
+        // Check if a presenter with the same class has been already attached.
+        return if (mPresenters.containsKey(presenterClassName)) {
+            // If so, get said presenter.
+            val foundPresenter = mPresenters[presenterClassName]
+            // Cast it to the expected class and return it.
+            presenterClass.cast(foundPresenter)
+        } else {
+            // If no presenter with the given class has been attached, return null.
+            null
         }
-        return presenter
     }
 
     /**
@@ -136,7 +168,22 @@ abstract class SimpleActivity<T : ViewDataBinding> : AppCompatActivity(), Simple
     protected fun getLoadingView(): ViewGroup? = findViewById(R.id.loading_content)
 
     /**
+     * Observes changes from a [MutableLiveData] object.
+     *
+     * @param liveData The object to be observed.
+     * @param observer How the changed values are going to behave.
+     * @param <T>      Generic defining the type of data the liveData object has.*/
+    protected fun <T> observe(liveData: MutableLiveData<T>, observer: Observer<T>) {
+        liveData.observe(this, observer)
+    }
+
+    /**
      * This function will return the layout ID for this activity content.
      */
     abstract fun getLayoutId(): Int
+
+    /**
+     * Returns the [ViewDataBinding] object for this class.
+     */
+    fun getBinding(): T? = mBinding
 }
