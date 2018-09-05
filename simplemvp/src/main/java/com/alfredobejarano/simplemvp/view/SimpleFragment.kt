@@ -59,7 +59,7 @@ abstract class SimpleFragment<T : ViewDataBinding> : SimpleView, Fragment() {
         // Inflate this fragment root.
         val root = inflater.inflate(R.layout.layout_base, container, false) as ViewGroup
         // Now, inflate the layout content that will make the ViewDataBinding object.
-        mBinding = DataBindingUtil.inflate(inflater, getLayoutId(), root.findViewById<View>(android.R.id.content) as ViewGroup, true)
+        mBinding = DataBindingUtil.inflate(inflater, getLayoutId(), root.findViewById<ViewGroup>(R.id.base_content) as ViewGroup, true)
         // Set the binding reference LifeCycleOwner.
         mBinding?.setLifecycleOwner(this)
         // Assign the mContent value as the root of the fragment.
